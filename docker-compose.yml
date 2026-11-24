@@ -1,0 +1,30 @@
+services:
+  hunter-boy-alert:
+    build: .
+    container_name: hunter-boy-alert
+    restart: unless-stopped
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 128m
+    expose: ["8080"]
+    volumes:
+      - /home/leandro/service_data/hunter-boy-alert:/data
+    environment:
+      HA_WEBHOOK_PREFIX: ${HA_WEBHOOK_PREFIX:?Set the trusted Home Assistant webhook prefix}
+    secrets:
+      - ha_webhook_url
+    networks:
+      - shared_services
+
+networks:
+  shared_services:
+    external: true
+
+secrets:
+  ha_webhook_url:
+    file: /etc/server-secrets/hunter-boy-alert/ha_webhook_url

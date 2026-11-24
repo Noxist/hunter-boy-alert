@@ -1,0 +1,13 @@
+# Add this action as the FIRST item in the existing Hunter Boy automation's
+# actions list. If applying home-assistant-cooldown-patch.yaml, put it directly
+# after the input_datetime.set_datetime action. Preserve the webhook trigger and
+# current announcement actions. Remove any presence condition from conditions.
+actions:
+  - continue_on_error: true
+    action: notify.mobile_app_pixel_9_pro_xl
+    data:
+      title: Hunter Boy wants to play
+      message: Hunter Boy pressed the gaming alert. Get your glasses on!
+      data:
+        ttl: 0
+        priority: high

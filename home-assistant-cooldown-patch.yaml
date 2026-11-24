@@ -1,0 +1,28 @@
+# Optional HA-side protection for direct callers of the bearer webhook.
+# This is a two-document merge patch; do not load it wholesale as automations.
+# Document 1: merge the helper into configuration.yaml (or create it in the HA
+# UI). If input_datetime: already exists, add only the child entry.
+input_datetime:
+  hunter_boy_last_alert:
+    name: Hunter Boy last alert
+    has_date: true
+    has_time: true
+
+---
+# Document 2: merge these keys into the existing automation, preserving its
+# webhook trigger. Remove presence gating and retain unrelated safety checks.
+# Place the notification patch after the helper update, then keep current
+# announcement/speaker/light actions after the notification.
+automation_patch:
+  mode: single
+  conditions:
+    - condition: template
+      value_template: >-
+        {{ as_timestamp(now()) - as_timestamp(states('input_datetime.hunter_boy_last_alert'), 0) >= 1800 }}
+  actions:
+    - continue_on_error: true
+      action: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.hunter_boy_last_alert
+      data:
+        datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"

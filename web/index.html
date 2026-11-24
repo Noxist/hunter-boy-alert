@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101116"><meta name="description" content="Send Hunter Boy's gaming alert.">
+  <title>Hunter Boy Gaming Alert</title>
+  <style>
+    :root{color-scheme:dark;--bg:#101116;--panel:#191a22;--muted:#a5a7b4;--text:#f7f7fa;--accent:#a78bfa;--accent2:#7c3aed;--ok:#66e3ad;--err:#ff8a9b}
+    *{box-sizing:border-box}body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 50% 0%,#29223e 0%,var(--bg) 48%);color:var(--text);font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:grid;place-items:center;padding:24px 18px calc(24px + env(safe-area-inset-bottom))}
+    main{width:min(100%,510px);text-align:center}.mark{width:74px;height:74px;border-radius:24px;display:grid;place-items:center;margin:0 auto 26px;background:linear-gradient(145deg,#a78bfa,#6d36da);box-shadow:0 12px 50px #7c3aed55}h1{font-size:clamp(2rem,8vw,3.05rem);letter-spacing:-.045em;line-height:1.06;margin:0 0 12px}.sub{color:var(--muted);margin:0 auto 34px;max-width:34ch}.card{border:1px solid #ffffff12;background:linear-gradient(180deg,#1b1c25ee,#171820ee);border-radius:28px;padding:clamp(22px,7vw,38px);box-shadow:0 24px 80px #0005}.button{width:100%;min-height:78px;border:0;border-radius:20px;color:#fff;background:linear-gradient(105deg,var(--accent2),#9c5bf1);font:700 1.25rem/1.2 inherit;font-size:1.25rem;font-weight:750;letter-spacing:-.02em;box-shadow:0 10px 30px #7c3aed55;cursor:pointer;touch-action:manipulation;transition:transform .15s,filter .15s,opacity .15s}.button:active{transform:scale(.985)}.button:focus-visible{outline:3px solid #d8c8ff;outline-offset:4px}.button:disabled{cursor:default;opacity:.64;filter:saturate(.7)}.status{min-height:0;margin:18px 0 0;color:var(--muted);font-size:.98rem}.status:empty{display:none}.status.success{color:var(--ok)}.status.error{color:var(--err)}.cooldown{display:none;margin-top:26px;padding-top:22px;border-top:1px solid #ffffff12}.cooldown.visible{display:block}.caption{color:var(--muted);font-size:.85rem}.clock{font-variant-numeric:tabular-nums;font-size:2rem;font-weight:700;letter-spacing:.08em;margin-top:4px}.spin{display:inline-block;width:18px;height:18px;border:2px solid #ffffff55;border-top-color:white;border-radius:50%;vertical-align:-3px;margin-right:9px;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}footer{margin-top:24px;color:#777987;font-size:.8rem}@media(min-width:700px){body{padding:40px} .card{padding:42px}}
+  </style>
+</head>
+<body><main>
+  <div class="mark" aria-hidden="true"><svg viewBox="0 0 80 54" width="48" height="40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="16" width="48" height="32" rx="6" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-width="2.5"/><path d="M9 23h6m4 0h6m4 0h6m4 0h6M9 30h6m4 0h6m4 0h6m4 0h6M12 38h26" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><rect x="57" y="4" width="19" height="43" rx="9.5" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-width="2.5"/><path d="M66.5 7v11m0 0h9" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+  <h1>Hunter Boy<br>Gaming Alert</h1>
+  <p class="sub">Ready for a game? Send Leandro a little nudge.</p>
+  <section class="card" aria-label="Gaming alert">
+    <button id="activate" class="button" type="button">Wake Leandro Up</button>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <div id="cooldown" class="cooldown"><div class="caption">Next alert available in</div><div id="clock" class="clock">30:00</div></div>
+  </section>
+  <footer>One alert every 30 minutes</footer>
+</main>
+<script>
+(()=>{const button=document.querySelector('#activate'),status=document.querySelector('#status'),box=document.querySelector('#cooldown'),clock=document.querySelector('#clock');let until=0,timer;
+function paint(){const left=Math.max(0,Math.ceil((until-Date.now())/1000));if(left){button.disabled=true;box.classList.add('visible');clock.textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;timer=setTimeout(paint,250)}else{button.disabled=false;box.classList.remove('visible');if(timer)clearTimeout(timer)}}
+function start(seconds){until=Date.now()+seconds*1000;paint()}
+function clearCooldown(){until=0;if(timer)clearTimeout(timer);button.disabled=false;box.classList.remove('visible');status.className='status';status.textContent=''}
+async function refresh(){try{const r=await fetch('/api/status',{cache:'no-store'}),d=await r.json();if(d.remaining_seconds>0)start(d.remaining_seconds);else if(until>0)clearCooldown()}catch{}}
+button.addEventListener('click',async()=>{button.disabled=true;status.className='status';status.innerHTML='<span class="spin" aria-hidden="true"></span>Sending the alert…';try{const r=await fetch('/api/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}),d=await r.json();if(r.status===429){start(d.remaining_seconds||1);status.className='status';status.textContent='Another alert was sent recently. Hang tight!'}else if(!r.ok){button.disabled=false;status.className='status error';status.textContent=d.error||'Could not send the alert. Please try again.'}else{status.className='status success';status.textContent='Alert sent! Leandro will be with you soon.';start(d.remaining_seconds||1800)}}catch{try{const r=await fetch('/api/status',{cache:'no-store'}),d=await r.json();if(d.remaining_seconds>0){start(d.remaining_seconds);status.className='status error';status.textContent='The connection was interrupted after sending. The alert may have gone through; check with Leandro before trying again.';return}}catch{}button.disabled=false;status.className='status error';status.textContent='Connection problem. The alert status could not be confirmed. Please check with Leandro before retrying.'}});
+refresh();setInterval(refresh,10000);setInterval(()=>{if(until&&until<=Date.now())clearCooldown()},1000)})();
+</script></body></html>
